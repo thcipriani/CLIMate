@@ -104,7 +104,7 @@ def show_image(image):
 def split_gif(gif):
     fn = os.path.basename(gif)
     dn = os.path.dirname(gif)
-    subprocess.check_call(get_convert() + ['-coalesce', gif,
+    subprocess.check_call(get_convert() + ['-coalesce', '+adjoin', gif,
                            os.path.join(dn, '{}%05d-climate.jpg'.format(fn))])
 
     while True:
