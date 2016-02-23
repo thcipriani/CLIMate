@@ -3,7 +3,7 @@ CLImate
 
 Shows current radar images in the terminal
 
-![demo.gif](Demo)
+![CLIMate demo](demo.gif "CLIMate demo")
 
 Utilizes the WeatherUnderground API. Expects a simple config file at
 `$HOME/.config/climate.conf`:
