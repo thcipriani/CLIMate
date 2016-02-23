@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # Displays the current radar from weather underground in your CLI
 #
@@ -15,15 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 
+import ConfigParser
 import glob
 import os
-import ConfigParser
 import subprocess
 import sys
 import tempfile
-import urllib2
 import time
+
+from distutils import spawn
+from urllib2 import urlopen
 
 BASE_URL = 'http://api.wunderground.com/api/'
 
@@ -33,7 +36,7 @@ gif_image = ''
 def get_config():
     config_file = os.path.join(os.environ['HOME'], '.config', 'climate.conf')
     if not os.path.isfile(config_file):
-        print '[WARNING] NO CONFIG FILE at: %s' % config_file
+        print('[ERROR] NO CONFIG FILE at: %s' % config_file)
         sys.exit(1)
 
     cfg = {}
@@ -43,10 +46,6 @@ def get_config():
         cfg[k] = v
 
     return cfg
-
-
-def get_value(val):
-    return int(min(int(val), 254)/42.5)
 
 
 def rgb_to_tput(rgb):
@@ -61,8 +60,24 @@ def esc(*args):
     return '\x1b[%sm' % ';'.join(str(arg) for arg in args)
 
 
+def get_convert():
+    convert = spawn.find_executable('gm')
+
+    if convert:
+        convert = [convert, 'convert']
+    else:
+        convert = [spawn.find_executable('convert')]
+
+    if not convert:
+        print('[ERROR] ImageMagick or GraphicsMagick must be installed')
+        cleanup()
+        sys.exit(1)
+
+    return convert
+
+
 def show_image(image):
-    output = subprocess.check_output(['convert', image, 'txt:-'])
+    output = subprocess.check_output(get_convert() + [image, 'txt:-'])
 
     all = []
     for line in output.splitlines():
@@ -89,8 +104,7 @@ def show_image(image):
 def split_gif(gif):
     fn = os.path.basename(gif)
     dn = os.path.dirname(gif)
-    subprocess.check_call(['convert',
-                           '-coalesce', gif,
+    subprocess.check_call(get_convert() + ['-coalesce', gif,
                            os.path.join(dn, '{}%05d-climate.jpg'.format(fn))])
 
     while True:
@@ -119,7 +133,7 @@ def grab_gif(cfg):
            'timelabel.y=10&',
            'reproj.automerc=1&',
            'num=8']
-    img = urllib2.urlopen(''.join(url))
+    img = urlopen(''.join(url))
     radar_gif = tempfile.NamedTemporaryFile(delete=False)
     with open(radar_gif.name, 'w') as f:
         f.write(img.read())
